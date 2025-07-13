@@ -44,3 +44,11 @@ def random(x: Any):
 
 print(random(5))
 print(random("Ishu"))
+
+
+# Lambda
+nums = [1,2,3,4]
+def sq(num):
+    return list(map(lambda x: x*x, nums))
+
+print(sq(nums))
