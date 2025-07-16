@@ -5,7 +5,6 @@ Set up with basic LangGraph structure
 Understand how data flow through a single node in LangGraph
 """
 from typing import Dict, TypedDict
-from autogen import Agent
 from langgraph.graph import StateGraph           #framework that helps in designing the flow of tasks in your application
 
 # AgentState - shared data structure that keeps tracks of the information as your application runs
@@ -27,3 +26,4 @@ graph.set_finish_point("Greeter")
 app = graph.compile()
 result = app.invoke({"message": "Vipin"})
 print(result['message'])
+
