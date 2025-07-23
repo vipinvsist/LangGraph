@@ -37,4 +37,8 @@ os.startfile("graph.png")
 
 
 user_input = input("Who's this..?")
-agent.invoke({'message':[HumanMessage(content=user_input)]})
+# agent.invoke({'message':[HumanMessage(content=user_input)]})
+while user_input !="exit":
+    agent.invoke({'message':[HumanMessage(content=user_input)]})
+    user_input = input("Enter: ")
+    
