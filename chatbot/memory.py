@@ -14,6 +14,8 @@ from langgraph.graph import START, StateGraph, END
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
 
+message_count = 0
+
 load_dotenv()
 
 class AgentState(TypedDict):
@@ -37,12 +39,16 @@ graph.add_edge(START,"process_node")
 graph.add_edge("process_node",END)
 app = graph.compile()
 
-converrsation_history=[]
+conversation_history=[]
 user_input = input("Enter:\n")
 while user_input!="exit":
-    converrsation_history.append(HumanMessage(content=user_input))
-    result = app.invoke({"messages": converrsation_history})
+    conversation_history.append(HumanMessage(content=user_input))
+    message_count += 1
+    # Remove the first message after every 5th message
+    if message_count % 5 == 0 and conversation_history:
+        conversation_history.pop(0)
 
+    result = app.invoke({"messages": conversation_history})
     # print(result['messages'])
     conversation_history = result['messages']
 
@@ -59,4 +65,6 @@ with open("logging.txt","w") as file:
 
 
 print("Conversation saved to logging.txt!!")
+
+"""But it consume a lot of tokens. So remove first message after every 5th message """
 
