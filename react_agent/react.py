@@ -30,11 +30,11 @@ load_dotenv()
 
 # without a reducer
 
-# state = {"messages": ["Hi"]}
-# update = {"messages": ['Nice to meet you']}
-# new_state = {"message":["Nice to meet you"]}
+state = {"messages": ["Hi"]}
+update = {"messages": ['Nice to meet you']}
+new_state = {"message":["Nice to meet you"]}
 
-# # With a Reducer
-# state = {"messages": ["Hi"]}
-# update = {"messages": ['Nice to meet you']}
-# new_state = {"message":["Hi","Nice to meet you"]}
+# With a Reducer
+state = {"messages": ["Hi"]}
+update = {"messages": ['Nice to meet you']}
+new_state = {"message":["Hi","Nice to meet you"]}
