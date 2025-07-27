@@ -30,11 +30,30 @@ load_dotenv()
 
 # without a reducer
 
-state = {"messages": ["Hi"]}
-update = {"messages": ['Nice to meet you']}
-new_state = {"message":["Nice to meet you"]}
+# state = {"messages": ["Hi"]}
+# update = {"messages": ['Nice to meet you']}
+# new_state = {"message":["Nice to meet you"]}
 
-# With a Reducer
-state = {"messages": ["Hi"]}
-update = {"messages": ['Nice to meet you']}
-new_state = {"message":["Hi","Nice to meet you"]}
+# # With a Reducer
+# state = {"messages": ["Hi"]}
+# update = {"messages": ['Nice to meet you']}
+# new_state = {"message":["Hi","Nice to meet you"]}
+
+
+class AgentState(TypedDict):
+    messages: Annotated[Sequence[BaseMessage],add_messages]
+
+@tool
+def add(a:int,b:int):
+    "This is an addition function"
+    return a+b
+
+tools = [add]
+
+model = ChatOpenAI(model = "gpt-4o-mini").bind_tools(tools)
+def model_call(state:AgentState)->AgentState:
+    system_prompt = SystemMessage(content ="You are an AI assistance, Please answer my question in breif and best of you.")
+    response = model.invoke([system_prompt])
+    return {"messages":[response]}
+
+
