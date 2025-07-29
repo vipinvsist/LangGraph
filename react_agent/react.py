@@ -4,6 +4,7 @@ Work with different types of Messages like ToolMessages
 Test out roubstness of our graph
 """
 
+from email import message
 from typing import Annotated, Sequence, TypedDict
 from dotenv import load_dotenv
 from langchain_core.messages import BaseMessage   # Foundational class for all message tpes in Langgraph
@@ -53,8 +54,48 @@ tools = [add]
 model = ChatOpenAI(model = "gpt-4o-mini").bind_tools(tools)
 def model_call(state:AgentState)->AgentState:
     system_prompt = SystemMessage(content ="You are an AI assistance, Please answer my question in breif and best of you.")
-    response = model.invoke([system_prompt])
+    response = model.invoke([system_prompt]+ state['messages'])
     return {"messages":[response]}
 
 
-print()
+def should_continue(state: AgentState):
+    message = state["messages"]
+    last_message = state['messages'][-1]
+    if not last_message.tool_calls:
+        return "end"
+    else:
+        return "continue"
+    
+graph = StateGraph(AgentState)
+
+graph.add_node("first_agent", model_call)
+graph.set_entry_point("first_agent")
+
+
+tool_node = ToolNode(tools=tools)
+graph.add_node("tools",tool_node)
+graph.add_conditional_edges(
+    "first_agent",
+    should_continue,
+    {
+        "continue": "tools",
+        "end": END
+    }
+)
+
+graph.add_edge("tools","first_agent")
+
+app = graph.compile()
+
+
+def print_stream(stream):
+    for s in stream:
+        message = s['messages'][-1]
+        if isinstance(message,tuple):
+            print(message)
+
+        else:
+            message.pretty_print()
+
+inputs = {"messages": [("user", "Add 40 + 55")]}
+print_stream(app.stream(inputs, stream_mode="values"))
