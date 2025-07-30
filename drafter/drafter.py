@@ -22,7 +22,7 @@ load_dotenv()
 document_content = ""
 
 class AgentState(TypedDict):
-    messages = Annotated[Sequence[BaseMessage], add_messages]
+    messages : Annotated[Sequence[BaseMessage], add_messages]
 
 @tool
 def update(content: str)->str:
@@ -57,29 +57,27 @@ def save(filename:str)-> str:
 tools  = [update, save]
 model = ChatOpenAI(model = "gpt-4o-mini").bind_tools(tools)
 
-def agent(state: AgentState)-> AgentState:
+def our_agent(state: AgentState)-> str:
     system_prompt = SystemMessage(content=f"""
- You are Drafter, a helpful writing assistant. You are going to help the user update and modify documents.
+    You are Drafter, a helpful writing assistant. You are going to help the user update and modify documents.
     - If the user wants to update or modify content, use the 'update' tool with the complete updated content.
     - If the user wants to save and finish, you need to use the 'save' tool.
     - Make sure to always show the current document state after modifications.
     The current document content is:{document_content}
 """)
     
-    if not state.get('messages'):
-        user_input = "I'm redy to help you to update a document. What would you like to create?"
+    if not state['messages']:
+        user_input = "I'm redy to help you to update a document. What would you like to create?\n"
         user_message = HumanMessage(content=user_input)
 
     else:
-        user_input = input("What would you like to do with this documment?")
+        user_input = input("What would you like to do with this documment?\n")
         print(f"\n User: {user_input}")
 
         user_message=HumanMessage(content=user_input)
 
 
-    previous_messages = state.get("messages", [])
-    all_messages = [system_prompt] + list(previous_messages + [user_message])
-
+    all_messages = [system_prompt] + list(state['messages'])+[user_message]
     response = model.invoke(all_messages)
 
 
@@ -87,14 +85,13 @@ def agent(state: AgentState)-> AgentState:
     if hasattr(response,"tool_calls") and response.tool_calls:
         print(f"Using tools: {[tc['name'] for tc in response.tool_calls]}")
         
-    return {"messages": previous_messages + [user_message, response]}
+    return {"messages": list(state['messages'])+ [user_message, response]}
 
 
-
-def should_continue(state:AgentState)-> str:
+def should_continue(state:AgentState)-> AgentState:
     """Determine if we should continue or end the process"""
 
-    messages= state.get('messages', [])
+    messages= state['messages']
 
     if not messages:
         return "continue"
@@ -122,7 +119,7 @@ def print_messsage(messages):
 
 graph = StateGraph(AgentState)
 
-graph.add_node("agent", agent)
+graph.add_node("agent", our_agent)
 graph.add_node("tools", ToolNode(tools))
 
 graph.set_entry_point("agent")
@@ -144,7 +141,7 @@ def run_document_agent():
     print("\n=============Drafter============")
     state = {"messages": []}
 
-    for step in app.stream(state, stream_mode = "messages"):
+    for step in app.stream(state, stream_mode = "values"):
         if "messages" in step:
             print_messsage(step['messages'])
 
