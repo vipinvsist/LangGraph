@@ -49,7 +49,17 @@ def add(a:int,b:int):
     "This is an addition function"
     return a+b
 
-tools = [add]
+@tool
+def sub(a:int, b:int):
+    "This function will give the difference btw 2 numbers"
+    return a-b
+
+@tool
+def mul(a:int,b:int):
+    "This function will give the product of 2 numbers"
+    return a*b
+
+tools = [add, sub, mul]
 
 model = ChatOpenAI(model = "gpt-4o-mini").bind_tools(tools)
 def model_call(state:AgentState)->AgentState:
@@ -97,5 +107,5 @@ def print_stream(stream):
         else:
             message.pretty_print()
 
-inputs = {"messages": [("user", "Add 40 + 55")]}
+inputs = {"messages": [("user", "Add 40 + 55. Subtract 55 -23 and multiply 3*15")]}
 print_stream(app.stream(inputs, stream_mode="values"))
