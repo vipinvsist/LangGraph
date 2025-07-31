@@ -1,3 +1,4 @@
+from unittest import result
 from dotenv import load_dotenv
 import os
 from langgraph.graph import StateGraph, END
@@ -18,7 +19,7 @@ embeddings = OpenAIEmbeddings(
     model = "text-embedding-3-small"
 )
 
-pdf_path = r"C:\Users\Vipin Vashisth\Downloads\Hyperspectral image analysis with Python made easy _ by Antón Garcia _ Abraia _ Feb, 2021 _ Medium _ Abraia.pdf"
+pdf_path = r"C:\Users\Vipin Vashisth\Downloads\Hyperspectral_final_pdf.pdf"
 
 if not os.path.exists(pdf_path):
     raise FileNotFoundError(f"PDF file not found: {pdf_path}")
@@ -40,27 +41,29 @@ text_splitter = RecursiveCharacterTextSplitter(
     chunk_overlap = 200
 )
 
-page_split = text_splitter.split_documents(pages)
+pages_split = text_splitter.split_documents(pages)
 
 persist_directory = r"C:\Users\Vipin Vashisth\Desktop\Langgraph\rag"
-collection_name = "Hyperspectral_name"
+collection_name = r"Hyperspectral_final"
 
 if not os.path.exists(persist_directory):
     os.makedirs(persist_directory)
-
-
 try:
     vectorstore = Chroma.from_documents(
-        documents=page_split,
-        embeddings = embeddings,
-        persist_directory= persist_directory,
+        documents=pages_split,
+        embedding=embeddings,
+        persist_directory=persist_directory,
         collection_name=collection_name
     )
     print(f"Created ChromaDB vector store!")
-
 except Exception as e:
     print(f"Error while setting up chroma db: {str(e)}")
-    raise
+print("After Chroma")
+
+
+# except Exception as e:
+#     print(f"Error while setting up chroma db: {str(e)}")
+#     raise
 retriver = vectorstore.as_retriever(
     search_type = "similarity",
     search_kwargs = {'k':5}
@@ -146,7 +149,7 @@ graph.add_conditional_edges(
     "llm",
     should_continue,
     {
-        True:"rertriver_agent",
+        True: "retriver_agent",
         False: END
     }
 )
@@ -154,4 +157,22 @@ graph.add_edge("retriver_agent",llm)
 graph.set_entry_point("llm")
 
 
-rag_agent = graph.complie()
+rag_agent = graph.compile()
+
+
+def running_agent():
+    print(("\n=== RAG AGENT"))
+
+    while True:
+        user_input = input("\nWhat is your question: ")
+        if user_input.lower() in ["exit","quit"]:
+            break
+
+        message = [HumanMessage(content=user_input)]
+        result = rag_agent.invoke({"message":message})
+        print("\n============Answer============")
+
+        print(result['messages'][-1].content)
+
+
+running_agent()
