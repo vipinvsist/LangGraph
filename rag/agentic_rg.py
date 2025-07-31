@@ -102,5 +102,56 @@ You are an intelligent AI assistant who answers questions about Stock Market Per
 Use the retriever tool available to answer questions about the stock market performance data. You can make multiple calls if needed.
 If you need to look up some information before asking a follow up question, you are allowed to do that!
 Please always cite the specific parts of the documents you use in your answers.
-
 """
+
+tools_dict = {our_tool.name: our_tool for our_tool in tools}
+
+def call_llm(state:AgentState):
+    """Function to call the LLM witht the Current State"""
+    message = list(state['message'])
+    message = [SystemMessage(content=system_prompt)]+message
+    message = llm.invoke(message)
+    return {"message": [message]}
+
+
+# Retriver Agent
+
+def take_action(state:AgentState)-> AgentState:
+    """Ececute the releavent tool call from the LLM's response"""
+
+    tool_calls =state['message'][-1].tool_calls
+    results=[]
+    for t in tool_calls:
+        print(f"Calling Tool: {t['name']} with query: {t['args'].get('query','No query Provided')}")
+        if not t['name'] in tools_dict:      # check for the valid tool
+            print(f"\nTool: {t['name']} does not exist.")
+            result = "Incorrect Tool Name, Please Retry and Select tool from the list of tools available."
+
+        else:
+            result = tools_dict[t['name']].invoke(t['args'].get('query',""))
+            print(f"Result length: {len(str(result))}")
+
+        #Append the Tool Message
+        
+        results.append(ToolMessage(tool_call_id=t['id'], name=t['name'],content=str(result)))
+
+    print("Tools Execution Complete. Back to the model!")
+    return {"message": results}
+
+graph=StateGraph(AgentState)
+graph.add_node("llm",call_llm)
+graph.add_node("retriver_agent",take_action)
+
+graph.add_conditional_edges(
+    "llm",
+    should_continue,
+    {
+        True:"rertriver_agent",
+        False: END
+    }
+)
+graph.add_edge("retriver_agent",llm)
+graph.set_entry_point("llm")
+
+
+rag_agent = graph.complie()
